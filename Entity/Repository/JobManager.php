@@ -49,12 +49,25 @@ class JobManager
 
     public function findJob($command, array $args = [])
     {
-        return $this->getJobManager()->createQuery("SELECT j FROM JMSJobQueueBundle:Job j WHERE j.command = :command AND j.args = :args")
+        $qb = $this->getJobManager()
+            ->createQueryBuilder()
+            ->from(Job::class, 'j')
+            ->select('j')
+            ->andWhere('j.command = :command')
             ->setParameter('command', $command)
-            ->setParameter('args', $args, Type::JSON_ARRAY)
-            ->setMaxResults(1)
+            ->setMaxResults(1);
+
+        if($args) {
+            $qb
+                ->andWhere('j.args = :args')
+                ->setParameter('args', $args, Type::JSON_ARRAY);
+        }
+
+        return $qb
+            ->getQuery()
             ->getOneOrNullResult();
     }
+
 
     public function getJob($command, array $args = [])
     {
