@@ -55,6 +55,7 @@ class JobManager
             ->select('j')
             ->andWhere('j.command = :command')
             ->setParameter('command', $command)
+            ->orderBy('j.id', 'desc')
             ->setMaxResults(1);
 
         if($args) {
