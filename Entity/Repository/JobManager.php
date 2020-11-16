@@ -58,7 +58,7 @@ class JobManager
             ->orderBy('j.id', 'desc')
             ->setMaxResults(1);
 
-        if($args) {
+        if ($args) {
             $qb
                 ->andWhere('j.args = :args')
                 ->setParameter('args', $args, Type::JSON_ARRAY);
@@ -68,7 +68,6 @@ class JobManager
             ->getQuery()
             ->getOneOrNullResult();
     }
-
 
     public function getJob($command, array $args = [])
     {
@@ -250,7 +249,9 @@ class JobManager
 
     public function closeJob(Job $job, $finalState)
     {
-        $this->getJobManager()->getConnection()->beginTransaction();
+        if (!$this->getJobManager()->getConnection()->isTransactionActive()) {
+            $this->getJobManager()->getConnection()->beginTransaction();
+        }
         try {
             $visited = [];
             $this->closeJobInternal($job, $finalState, $visited);
