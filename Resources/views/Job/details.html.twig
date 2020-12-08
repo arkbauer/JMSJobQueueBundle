@@ -28,6 +28,12 @@
         <th width="20%">Command</th>
         <td>{{ macros.command(job, true) }}</td>
     </tr>
+    {% if job.payload %}
+        <tr>
+            <th>Payload</th>
+            <td>{{ job.payload | json_encode }}</td>
+        </tr>
+    {% endif %}
     <tr>
         <th>State</th>
         <td>{{ macros.state(job) }}</td>
