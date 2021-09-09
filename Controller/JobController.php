@@ -4,6 +4,7 @@ namespace JMS\JobQueueBundle\Controller;
 
 use Doctrine\Common\Util\ClassUtils;
 use Doctrine\ORM\EntityManager;
+use Doctrine\Persistence\ManagerRegistry;
 use JMS\JobQueueBundle\Entity\Job;
 use JMS\JobQueueBundle\Entity\Repository\JobManager;
 use JMS\JobQueueBundle\View\JobFilter;
@@ -15,6 +16,16 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class JobController extends AbstractController
 {
+    private ManagerRegistry $doctrine;
+
+    private JobManager $jobManager;
+
+    public function __construct(ManagerRegistry $doctrine, JobManager $jobManager)
+    {
+        $this->doctrine = $doctrine;
+        $this->jobManager = $jobManager;
+    }
+
     /**
      * @Route("/", name = "jms_jobs_overview")
      */
@@ -27,7 +38,7 @@ class JobController extends AbstractController
             ->where($qb->expr()->isNull('j.originalJob'))
             ->orderBy('j.id', 'desc');
 
-        $lastJobsWithError = $jobFilter->isDefaultPage() ? $this->getRepo()->findLastJobsWithError(5) : [];
+        $lastJobsWithError = $jobFilter->isDefaultPage() ? $this->jobManager->findLastJobsWithError(5) : [];
         foreach ($lastJobsWithError as $i => $job) {
             $qb->andWhere($qb->expr()->neq('j.id', '?'.$i));
             $qb->setParameter($i, $job->getId());
@@ -118,7 +129,7 @@ class JobController extends AbstractController
         return $this->render('@JMSJobQueue/Job/details.html.twig', array(
             'job' => $job,
             'relatedEntities' => $relatedEntities,
-            'incomingDependencies' => $this->getRepo()->getIncomingDependencies($job),
+            'incomingDependencies' => $this->jobManager->getIncomingDependencies($job),
             'statisticData' => $statisticData,
             'statisticOptions' => $statisticOptions,
         ));
@@ -151,11 +162,6 @@ class JobController extends AbstractController
 
     private function getEm(): EntityManager
     {
-        return $this->get('doctrine')->getManagerForClass(Job::class);
-    }
-
-    private function getRepo(): JobManager
-    {
-        return $this->get('jms_job_queue.job_manager');
+        return $this->doctrine->getManagerForClass(Job::class);
     }
 }
