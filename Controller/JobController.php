@@ -9,6 +9,7 @@ use JMS\JobQueueBundle\Entity\Job;
 use JMS\JobQueueBundle\Entity\Repository\JobManager;
 use JMS\JobQueueBundle\View\JobFilter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -20,10 +21,13 @@ class JobController extends AbstractController
 
     private JobManager $jobManager;
 
-    public function __construct(ManagerRegistry $doctrine, JobManager $jobManager)
+    private ParameterBagInterface $parameterBag;
+
+    public function __construct(ManagerRegistry $doctrine, JobManager $jobManager, , ParameterBagInterface $parameterBag)
     {
         $this->doctrine = $doctrine;
         $this->jobManager = $jobManager;
+        $this->parameterBag = $parameterBag;
     }
 
     /**
@@ -163,5 +167,10 @@ class JobController extends AbstractController
     private function getEm(): EntityManager
     {
         return $this->doctrine->getManagerForClass(Job::class);
+    }
+
+    protected function getParameter($parameter)
+    {
+        return $this->parameterBag->get($parameter);
     }
 }
