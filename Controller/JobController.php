@@ -23,7 +23,7 @@ class JobController extends AbstractController
 
     private ParameterBagInterface $parameterBag;
 
-    public function __construct(ManagerRegistry $doctrine, JobManager $jobManager, , ParameterBagInterface $parameterBag)
+    public function __construct(ManagerRegistry $doctrine, JobManager $jobManager, ParameterBagInterface $parameterBag)
     {
         $this->doctrine = $doctrine;
         $this->jobManager = $jobManager;
