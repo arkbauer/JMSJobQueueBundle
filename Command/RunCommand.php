@@ -321,8 +321,10 @@ class RunCommand extends Command
             if ($data['process']->isRunning()) {
                 // For long running processes, it is nice to update the output status regularly.
                 // Disable partial output saving as this is creates large binlog
-//                $data['job']->addOutput($newOutput);
-//                $data['job']->addErrorOutput($newErrorOutput);
+                if($data['job']->useRealTimeOutput()) {
+                    $data['job']->addOutput($newOutput);
+                    $data['job']->addErrorOutput($newErrorOutput);
+                }
                 $data['job']->checked();
                 $em = $this->getEntityManager();
                 $em->persist($data['job']);

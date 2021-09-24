@@ -173,6 +173,9 @@ class Job
     /** @ORM\Column(type = "json_array") */
     private $payload;
 
+    /** @ORM\Column(type = "boolean") */
+    private $useRealTimeOutput = false;
+
     /**
      * This may store any entities which are related to this job, and are
      * managed by Doctrine.
@@ -181,9 +184,9 @@ class Job
      */
     private $relatedEntities;
 
-    public static function create($command, array $args = [], $confirmed = true, $queue = self::DEFAULT_QUEUE, $priority = self::PRIORITY_DEFAULT)
+    public static function create($command, array $args = [], $confirmed = true, $queue = self::DEFAULT_QUEUE, $priority = self::PRIORITY_DEFAULT, $useRealTimeOutput = false)
     {
-        return new self($command, $args, $confirmed, $queue, $priority);
+        return new self($command, $args, $confirmed, $queue, $priority, $useRealTimeOutput);
     }
 
     public static function isNonSuccessfulFinalState($state)
@@ -205,7 +208,7 @@ class Job
         ];
     }
 
-    public function __construct($command, array $args = [], $payload = [], $confirmed = true, $queue = self::DEFAULT_QUEUE, $priority = self::PRIORITY_DEFAULT)
+    public function __construct($command, array $args = [], $payload = [], $confirmed = true, $queue = self::DEFAULT_QUEUE, $priority = self::PRIORITY_DEFAULT, $useRealTimeOutput = false)
     {
         if (trim($queue) === '') {
             throw new \InvalidArgumentException('$queue must not be empty.');
@@ -220,6 +223,7 @@ class Job
         $this->state           = $confirmed ? self::STATE_PENDING : self::STATE_NEW;
         $this->queue           = $queue;
         $this->priority        = $priority * -1;
+        $this->useRealTimeOutput  = $useRealTimeOutput;
         $this->createdAt       = new \DateTime();
         $this->executeAfter    = new \DateTime();
         $this->executeAfter    = $this->executeAfter->modify('-1 second');
@@ -624,6 +628,14 @@ class Job
         $this->payload = $payload;
 
         return $this;
+    }
+
+    /**
+     * @return bool|mixed
+     */
+    public function useRealTimeOutput()
+    {
+        return $this->useRealTimeOutput;
     }
 
     public function isNew()
