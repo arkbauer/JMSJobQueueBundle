@@ -161,7 +161,7 @@
                     {% if _display_code_snippet %}{% set _is_first_user_code = false %}{% endif %}
                     <div class="trace-line">
 {#                        {{ include('@Twig/Exception/trace.html.twig', { prefix: index, i: i, trace: trace, _display_code_snippet: _display_code_snippet, style: 'display' }, with_context = false) }}#}
-                        {{ dump(trace) }}
+                        {{ traceOutput(trace) }}
                     </div>
                 {% endfor %}
             </div>
