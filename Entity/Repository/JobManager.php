@@ -276,6 +276,34 @@ class JobManager
         }
     }
 
+    /**
+     * Unassign worker from the $job
+     *
+     * @throws \Doctrine\DBAL\ConnectionException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
+    public function unassignWorker(Job $job)
+    {
+        if (!$this->getJobManager()->getConnection()->isTransactionActive()) {
+            $this->getJobManager()->getConnection()->beginTransaction();
+        }
+        try {
+            $visited = [];
+            $job->setWorkerName(null);
+            $this->getJobManager()->persist($job);
+            $this->getJobManager()->flush();
+            $this->getJobManager()->getConnection()->commit();
+
+            // Clean-up entity manager to allow for garbage collection to kick in.
+            $this->getJobManager()->detach($job);
+        } catch (\Exception $ex) {
+            $this->getJobManager()->getConnection()->rollback();
+
+            throw $ex;
+        }
+    }
+
     private function closeJobInternal(Job $job, $finalState, array &$visited = [])
     {
         if (in_array($job, $visited, true)) {

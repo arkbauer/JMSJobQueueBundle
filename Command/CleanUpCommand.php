@@ -44,6 +44,7 @@ class CleanUpCommand extends Command
         $con = $em->getConnection();
 
         $this->cleanUpExpiredJobs($em, $con, $input);
+        $this->collectAbandonedPendingJobs($em);
         $this->collectStaleJobs($em);
 
         return 0;
@@ -57,6 +58,13 @@ class CleanUpCommand extends Command
             }
 
             $this->jobManager->closeJob($job, Job::STATE_INCOMPLETE);
+        }
+    }
+
+    private function collectAbandonedPendingJobs(EntityManager $em)
+    {
+        foreach ($this->findAbandonedPendingJobs($em) as $job) {
+            $this->jobManager->unassignWorker($job);
         }
     }
 
@@ -76,6 +84,36 @@ class CleanUpCommand extends Command
                                                 AND j.id NOT IN (:excludedIds)")
                 ->setParameter('running', Job::STATE_RUNNING)
                 ->setParameter('maxAge', new \DateTime('-5 minutes'), 'datetime')
+                ->setParameter('excludedIds', $excludedIds)
+                ->setMaxResults(1)
+                ->getOneOrNullResult();
+
+            if ($job !== null) {
+                $excludedIds[] = $job->getId();
+
+                yield $job;
+            }
+        } while ($job !== null);
+    }
+
+    /**
+     * Locates Jobs that have been abandoned in pending state when the assigned process got killed ungracefully
+     *
+     * @return Job[]
+     */
+    private function findAbandonedPendingJobs(EntityManager $em)
+    {
+        $excludedIds = array(-1);
+
+        do {
+            $em->clear();
+
+            /** @var Job $job */
+            $job = $em->createQuery("SELECT j FROM JMSJobQueueBundle:Job j
+                                      WHERE j.state = :pending AND j.workerName IS NOT NULL AND j.createdAt < :maxAge
+                                                AND j.id NOT IN (:excludedIds)")
+                ->setParameter('pending', Job::STATE_PENDING)
+                ->setParameter('maxAge', new \DateTime('-15 minutes'), 'datetime')
                 ->setParameter('excludedIds', $excludedIds)
                 ->setMaxResults(1)
                 ->getOneOrNullResult();
