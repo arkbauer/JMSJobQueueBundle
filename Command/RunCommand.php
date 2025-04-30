@@ -67,6 +67,9 @@ class RunCommand extends Command
     /** @var array */
     private $queueOptions;
 
+    /** @var bool */
+    private $cleanOutput;
+
     public function __construct(ManagerRegistry $managerRegistry, JobManager $jobManager, EventDispatcherInterface $dispatcher, array $queueOptionsDefault, array $queueOptions)
     {
         parent::__construct();
@@ -87,6 +90,7 @@ class RunCommand extends Command
             ->addOption('idle-time', null, InputOption::VALUE_REQUIRED, 'Time to sleep when the queue ran out of jobs.', 2)
             ->addOption('queue', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Restrict to one or more queues.', array())
             ->addOption('worker-name', null, InputOption::VALUE_REQUIRED, 'The name that uniquely identifies this worker process.')
+            ->addOption('clean-output', null, InputOption::VALUE_NONE, 'Forward clean output from jobs.')
         ;
     }
 
@@ -127,6 +131,8 @@ class RunCommand extends Command
                 strlen($workerName)
             ));
         }
+
+        $this->cleanOutput = (bool) $input->getOption('clean-output');
 
         $this->env = $input->getOption('env');
         $this->verbose = $input->getOption('verbose');
@@ -297,11 +303,19 @@ class RunCommand extends Command
 
             if ($this->verbose) {
                 if ( ! empty($newOutput)) {
-                    $this->output->writeln('Job '.$data['job']->getId().': '.str_replace("\n", "\nJob ".$data['job']->getId().": ", $newOutput));
+                    if ($this->cleanOutput) {
+                        $this->output->writeln($newOutput);
+                    } else {
+                        $this->output->writeln('Job '.$data['job']->getId().': '.str_replace("\n", "\nJob ".$data['job']->getId().": ", $newOutput));
+                    }
                 }
 
                 if ( ! empty($newErrorOutput)) {
-                    $this->output->writeln('Job '.$data['job']->getId().': '.str_replace("\n", "\nJob ".$data['job']->getId().": ", $newErrorOutput));
+                    if ($this->cleanOutput) {
+                        $this->output->writeln($newErrorOutput);
+                    } else {
+                        $this->output->writeln('Job '.$data['job']->getId().': '.str_replace("\n", "\nJob ".$data['job']->getId().": ", $newErrorOutput));
+                    }
                 }
             }
 
